@@ -1,4 +1,4 @@
-# Gender-wage-gap-of-miami-dade-county
+# Gender/Race-wage-gap-of-miami-dade-county
 ---
 title: ""Is there a Gender wage Gap in the Miami Dade County?""
 output: html_notebook
