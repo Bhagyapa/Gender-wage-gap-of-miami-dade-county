@@ -1,0 +1,998 @@
+---
+title: ""Is there a Gender wage Gap in the Miami Dade County?""
+output: html_notebook
+---
+## Introduction
+#Loasing Libraries and tyding the data
+```{r}
+library(readr)
+library(tidyverse)
+setwd("C:/Users/bhagy/Desktop")
+Sal <- read_csv("Sal.csv")
+race <- read_csv("race.csv")
+employ1 <- read_csv("employ1.csv")
+salfullrows <- read_csv("salfullrows.csv")
+racefullrows <- read_csv("racefullrows.csv")
+predictedrace <- read_csv("predicted race.csv")
+newemploy<- drop_na(employ1)
+data(newemploy)
+cor.test(race$year,race$num_ppl)
+```
+```{r}
+summary(newemploy)
+print(newemploy)
+```
+#Timeseries 
+```{r}
+library(forecast)
+library(readr)
+library(dplyr)
+newemploy$DATE <- as.Date(newemploy$DATE)
+library(zoo)
+tsdata <- ts(newemploy$unemployment_rate,start= 1990,end= 2018,frequency = 12)
+# look at the trend
+ddata <- decompose(tsdata)
+plot(ddata)
+plot(ddata$seasonal)
+plot(ddata$trend)
+class(tsdata)
+plot(newemploy$unemployment_rate,type="l",main="Time vs Unemployment rate")
+```
+#Arima model
+```{r}
+mymodel <- auto.arima(tsdata)
+mymodel
+```
+#fitting the models
+```{r}
+auto.arima(tsdata,ic="aic",trace=TRUE)
+```
+#residuals
+```{r}
+library(tseries)
+adf.test(mymodel$residuals)
+plot.ts(mymodel$residuals)
+acf(ts(mymodel$residuals),main = "ACF Residual")
+pacf(ts(mymodel$residuals),main = "PACF Residual")
+```
+#forecasting for unemployment
+```{r}
+myforecast <- forecast(mymodel, level =c (95), h= 5*12)
+plot(myforecast,main = "Unemployment forecasting for the next 5 years",xlab = "Time", ylab ="Unemployment rate")
+myforecast[["mean"]]
+```
+#exponential smoothing forecast
+```{r}
+eforecast <- ets(tsdata)
+plot(forecast(eforecast,h=5*12))
+```
+
+
+#AVerage  for unemployment
+```{r}
+Unemployment_rate <- 2.845611
+cat("predicted average Unemployment_rate for the next 5 years in Miami Dade County in :",Unemployment_rate)
+```
+##forecasting average salary male and females:   dataset:1(monthly salary)
+```{r}
+library(forecast)
+library(readr)
+newsalfullrows <- drop_na(salfullrows)
+newsalfullrows$mon_wage <- as.numeric(newsalfullrows$mon_wage)
+library(zoo)
+newsalfullrows$year <- paste (newsalfullrows$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+ns <- ts(newsalfullrows$mon_wage,start= 1997, end= 2018,frequency = 12)
+ns1 <- decompose(ns)
+plot(ns1)
+plot(ns1$seasonal)
+plot(ns1$trend)
+plot(newsalfullrows$mon_wage,type ="l",main = "monthly salary of both genders",xlab= "Year",ylab="monthly Salary")
+class(ns1)
+ammodel <- auto.arima(ns)
+ammodel
+auto.arima(ns,ic="aic",trace=TRUE)
+pred_sal <- forecast(ammodel, level =c (95), h= 5*12)
+plot(pred_sal,main = "Monthly Salary forecasting for the next 5years",xlab = "Time", ylab ="monthly salary")
+pred_sal[["mean"]]
+
+```
+# Forecasting for male monthly salary
+```{r}
+library(forecast)
+library(readr)
+newsalfullrows <- drop_na(salfullrows)
+newsalfullrows$mon_wage <- as.numeric(newsalfullrows$mon_wage)
+malesalfullrows<- subset(newsalfullrows,sex == "Male",select=c(year,mon_wage))
+library(zoo)
+malesalfullrows$year <- paste (malesalfullrows$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+malens <- ts(malesalfullrows$mon_wage,start= 1997, end= 2018,frequency = 12)
+ns2 <- decompose(malens)
+plot(ns2)
+plot(ns2$seasonal)
+plot(ns2$trend)
+plot(malesalfullrows$mon_wage,type ="l",main = "male monthly salary ",xlab= "Year",ylab="monthly Salary")
+class(ns2)
+ammodel2 <- auto.arima(malens)
+ammodel2
+auto.arima(malens,ic="aic",trace=TRUE)
+pred_sal2 <- forecast(ammodel2, level =c (95), h= 5*12)
+```
+```{r}
+plot(pred_sal2,main = "male Monthly Salary forecasting for the next 5years",xlab = "Time", ylab ="monthly salary")
+pred_sal2[["mean"]]
+```
+#forecasting for female monthly salary
+```{r}
+library(forecast)
+library(readr)
+newsalfullrows <- drop_na(salfullrows)
+newsalfullrows$mon_wage <- as.numeric(newsalfullrows$mon_wage)
+femalesalfullrows<- subset(newsalfullrows,sex == "Female",select=c(year,mon_wage))
+library(zoo)
+femalesalfullrows$year <- paste (femalesalfullrows$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+femalens <- ts(femalesalfullrows$mon_wage,start= 1997, end= 2018,frequency = 12)
+ns3 <- decompose(femalens)
+plot(ns3)
+plot(ns3$seasonal)
+plot(ns3$trend)
+plot(femalesalfullrows$mon_wage,type ="l",main = " female monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns3)
+ammodel3 <- auto.arima(femalens)
+ammodel3
+auto.arima(femalens,ic="aic",trace=TRUE)
+pred_sal3 <- forecast(ammodel3, level =c (95), h= 5*12)
+plot(pred_sal3,main = "female Monthly Salary forecasting for the next 5years",xlab = "Time", ylab ="monthly salary")
+pred_sal3[["mean"]]
+```
+# calculating monthly women salary for the year 2020
+
+```{r}
+ womensal <- 2391.5799/1337.244
+womensal
+cat("The average mens monthly salary is ",womensal,"times of womens monthly salary")
+```
+#calculating how much women earns for every men who earns a dollar 
+```{r}
+wcents <- 1/womensal
+wcents
+cat("The women earns",wcents*100, "cents for every men who earns a dollar")
+```
+#forecasting for race 1: White Alone
+```{r}
+library(forecast)
+library(readr)
+newracefullrows <- drop_na(racefullrows)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+wracefullrows<- subset(newracefullrows,race == "White Alone",select=c(year,EarnS))
+wracefullrows$year <- paste (wracefullrows$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+wrc <- ts(wracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns4 <- decompose(wrc)
+plot(ns4)
+plot(ns4$seasonal)
+plot(ns4$trend)
+plot(wracefullrows$EarnS,type ="l",main = " whites monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns4)
+ammodel4 <- auto.arima(wrc)
+ammodel4
+auto.arima(wrc,ic="aic",trace=TRUE)
+pred_sal4 <- forecast(ammodel4, level =c (95), h= 3*12)
+plot(pred_sal4,main = "whites Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal4[["mean"]]
+```
+#forecasting for race 2: Black or African American Alone
+```{r}
+library(forecast)
+library(readr)
+newracefullrows <- drop_na(racefullrows)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+bracefullrows<- subset(newracefullrows,race == "Black or African American Alone",select=c(year,EarnS))
+bracefullrows$year <- paste (bracefullrows$year,"/01/01",sep ="")
+brc <- ts(bracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns5 <- decompose(brc)
+plot(ns5)
+plot(ns5$seasonal)
+plot(ns5$trend)
+plot(bracefullrows$EarnS,type ="l",main = " Blacks monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns5)
+ammodel5 <- auto.arima(brc)
+ammodel5
+auto.arima(brc,ic="aic",trace=TRUE)
+pred_sal5 <- forecast(ammodel5, level =c (95), h= 3*12)
+plot(pred_sal5,main = "blacks Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal5[["mean"]]
+```
+#forecasting for race 3: American Indian or Alaska Native Alone
+```{r}
+library(forecast)
+library(readr)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+aracefullrows <- subset(newracefullrows,race == "American Indian or Alaska Native Alone",select=c(year,EarnS))
+head(aracefullrows)
+aracefullrows$year <- paste(aracefullrows$year,"/01/01",sep ="")
+arc <- ts(aracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns6 <- decompose(arc)
+plot(ns6)
+plot(ns6$seasonal)
+plot(ns6$trend)
+plot(aracefullrows$EarnS,type ="l",main = "American Indian or Alaska Native Alone monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns6)
+ammodel6 <- auto.arima(arc)
+ammodel6
+auto.arima(arc,ic="aic",trace=TRUE)
+pred_sal6 <- forecast(ammodel6, level =c (95), h= 3*12)
+plot(pred_sal6,main = "American Indian Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal6[["mean"]]
+```
+#forecasting for race 4: Asian Alone
+```{r}
+library(forecast)
+library(readr)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+asracefullrows <- subset(newracefullrows,race == "Asian Alone",select=c(year,EarnS,race))
+head(asracefullrows)
+asracefullrows$year <- paste(asracefullrows$year,"/01/01",sep ="")
+asrc <- ts(asracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns7 <- decompose(asrc)
+plot(ns7)
+plot(ns7$seasonal)
+plot(ns7$trend)
+plot(asracefullrows$EarnS,type ="l",main = "Asian Alone monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns7)
+ammodel7 <- auto.arima(asrc)
+ammodel7
+auto.arima(asrc,ic="aic",trace=TRUE)
+pred_sal7 <- forecast(ammodel7, level =c (95), h= 3*12)
+plot(pred_sal7,main = "Asian Alone Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal7[["mean"]]
+```
+#forecasting for race 5: Native Hawaiian or Other Pacific Islander Alone
+```{r}
+library(forecast)
+library(readr)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+nracefullrows <- subset(newracefullrows,race == "Native Hawaiian or Other Pacific Islander Alone",select=c(year,EarnS,race))
+head(nracefullrows)
+nracefullrows$year <- paste(nracefullrows$year,"/01/01",sep ="")
+nrc <- ts(nracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns8 <- decompose(nrc)
+plot(ns8)
+plot(ns8$seasonal)
+plot(ns8$trend)
+plot(nracefullrows$EarnS,type ="l",main = "Native Hawaiian or Other Pacific Islander Alone monthly salary",xlab= "Year",ylab="monthly Salary")
+class(ns8)
+ammodel8 <- auto.arima(nrc)
+ammodel8
+auto.arima(nrc,ic="aic",trace=TRUE)
+pred_sal8 <- forecast(ammodel8, level =c (95), h= 3*12)
+plot(pred_sal8,main = "Native Hawaiian or Other Pacific Islander Alone Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal8[["mean"]]
+```
+
+#forecasting for race 6: Two or More Race Groups
+
+```{r}
+library(forecast)
+library(readr)
+newracefullrows$EarnS <- as.numeric(newracefullrows$EarnS)
+tracefullrows <- subset(newracefullrows,race == "Two or More Race Groups",select=c(year,EarnS,race))
+head(tracefullrows)
+tracefullrows$year <- paste(tracefullrows$year,"/01/01",sep ="")
+trc <- ts(tracefullrows$EarnS,start= 1997, end= 2018,frequency = 12)
+ns9 <- decompose(trc)
+plot(ns9)
+plot(ns9$seasonal)
+plot(ns9$trend)
+plot(tracefullrows$EarnS,type ="l",main = "Two or More Race Groups",xlab= "Year",ylab="monthly Salary")
+class(ns9)
+ammodel9 <- auto.arima(trc)
+ammodel9
+auto.arima(trc,ic="aic",trace=TRUE)
+pred_sal9 <- forecast(ammodel9, level =c (95), h= 3*12)
+plot(pred_sal9,main = "Two or More Race Groups Monthly Salary forecasting for the next 3years",xlab = "Time", ylab ="monthly salary")
+pred_sal9[["mean"]]
+```
+```{r}
+ggplot(data=newsalfullrows,aes(x= factor(year),y= mon_wage,fill= sex))+geom_bar(stat="identity",position= "dodge")+labs(title="Monthly salary of both male and female",x="year",y="Monthly salary")
+ggplot(data=newsalfullrows,aes(x=EmpTotal,y=mon_wage,color=sex))+geom_point()+geom_smooth(color="black")+labs(title="Monthly salary vs No of employees",x="Monthly salary", y="No of Employees")
+```
+
+```{r}
+ggplot(data=newracefullrows,aes(x= year,y= EarnS,color= race))+geom_point()+geom_smooth(color="black")+scale_y_continuous(limit=c(0,20000))
+ggplot(data=newracefullrows,aes(x= year,y= EarnS))+geom_bar(stat="identity",position="dodge",aes(fill= race))+scale_y_continuous(limit=c(0,20000))
+```
+
+
+#subsetting male average salary
+```{r}
+library('ggplot2')
+library('forecast')
+library('tseries')
+#newsal <- drop_na(Sal)
+newsalfullrows$year <- as.Date(newsalfullrows$year)
+nsal <- subset(newsalfullrows, sex == "Male", select = c(mon_wage, year,sex,industry))
+head(nsal)
+dd <- aggregate(nsal$mon_wage ,by=list(dept = nsal$industry), FUN = mean)
+head(dd)
+sorted <- dd[order(-dd$x),]
+topSorted <- sorted[c(1:3),]
+
+
+#plot : Males who earn highest in top departemnts
+ggplot(data =topSorted, aes(x= dept, y= x) )+geom_bar(stat = "identity",fill = "blue")+labs(x = "Department", y = "salary for Male",title = "Males who earn highest in top departemnts")
+# Bottom 3 departments who earn lowest
+bsorted <- dd[order(dd$x),]
+botSorted <- bsorted[c(1:3),]
+#plot : Males who earn lowest in bottom departemnts
+ggplot(data =botSorted, aes(x= dept, y= x) )+geom_bar(stat = "identity",fill = "dark green")+labs(x = "Department", y = "salary for Male",title = "Males who earn lowest in bottom departemnts")+theme(axis.text.x = element_text(angle=45,hjust = 1))
+```
+#subsetting female average salary
+```{r}
+fnsal <- subset(newsalfullrows, sex == "Female", select = c(mon_wage, year,industry,sex))
+head(fnsal)
+dd1 <- aggregate(fnsal$mon_wage ,by=list(dept = fnsal$industry), FUN = mean)
+head(dd1)
+sorted1 <- dd1[order(-dd1$x),]
+topSorted1 <- sorted1[c(1:3),]
+#plot : Females who earn highest in top departemnts
+ggplot(data =topSorted1, aes(x= dept, y= x) )+geom_bar(stat = "identity",fill = "pink")+ labs(x = "Department", y = "salary for Female",title = " Females who earn highest in top departemnts")
+# Bottom 3 departments who earn lowest for female
+bfsorted <- dd1[order(dd1$x),]
+botfSorted <- bfsorted[c(1:3),]
+#plot : Males who earn lowest in bottom departemnts
+ggplot(data =botfSorted, aes(x= dept, y= x) )+geom_bar(stat = "identity",fill = "violet")+labs(x = "Department", y = "salary for Female",title = "females who earn lowest in bottom departemnts")+theme(axis.text.x = element_text(angle=45,hjust = 1))
+```
+#Subsetting for male and female who earn highest in top 8 departments
+```{r}
+nsal1 <- subset(newsalfullrows, sex == "Male" | sex == "Female", select = c(mon_wage, year,industry,sex))
+head(nsal1)
+dd2 <- aggregate(nsal1$mon_wage ,by=list(dept = nsal1$industry,sex= nsal1$sex), FUN = mean)
+head(dd2)
+sorted2 <- dd2[order(-dd2$x),]
+topSorted2 <- sorted2[c(1:10),]
+ggplot(data =topSorted2, aes(x= dept, y= x,fill= sex) )+geom_bar(stat = "identity",position ="dodge")+labs(x = "Department", y = "Average salary",title = "Males and Females who earn highest in top 8 departemnts ")+theme(axis.text.x = element_text(angle = 45,hjust=1))
+sorted3 <- dd2[order(dd2$x),]
+bSorted3 <- sorted3[c(1:10),]
+ggplot(data =bSorted3, aes(x= dept, y= x,fill= sex) )+geom_bar(stat = "identity",position ="dodge")+labs(x = "Department", y = "Average salary",title = "Males and Females who earn lowest in top 8 departemnts ")+theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+```
+
+```{r}
+newsal <- drop_na(Sal)
+```
+#loading average salary male and females:dataset 2(Average salary)
+```{r}
+library(forecast)
+library(readr)
+newsal$avg_wage_ft <- as.numeric(newsal$avg_wage_ft)
+library(zoo)
+newsal$Date <- paste (newsal$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata1 <- ts(newsal$avg_wage_ft,frequency = 12)
+tsdata1
+ddata1 <- decompose(tsdata1, "multiplicative")
+plot(ddata1)
+plot(ddata1$seasonal)
+plot(ddata1$trend)
+plot(newsal$avg_wage_ft,type ="l",main = "Average salary of both genders",xlab= "Year",ylab="Average Salary")
+```
+```{r}
+class(tsdata1)
+```
+#Arima model
+```{r}
+mymodel1 <- auto.arima(tsdata1)
+mymodel1
+```
+#fitting model
+```{r}
+auto.arima(tsdata1,ic="aic",trace=TRUE)
+```
+#Residuals
+```{r}
+library(tseries)
+adf.test(mymodel1$residuals)
+plot.ts(mymodel1$residuals)
+acf(ts(mymodel1$residuals),main = "ACF Residual")
+pacf(ts(mymodel1$residuals),main = "PACF Residual")
+```
+#time series forecasting and average salary for both genders
+```{r}
+myforecast1 <- forecast(mymodel1, level =c (95), h= 3*12)
+plot(myforecast1,main = "Salary forecasting for the next 3years",xlab = "Time", ylab ="Average salary")
+myforecast1[["mean"]]
+```
+#Male average salary
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newsal <- drop_na(Sal)
+msal <- subset(newsal, sex_name == "Male", select = c(avg_wage_ft, year,soc_name,sex_name))
+head(msal)
+msal$avg_wage_ft <- as.numeric(msal$avg_wage_ft)
+msal$Date <- paste (msal$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata2 <- ts(msal$avg_wage_ft,frequency = 12)
+tsdata2
+ddata2 <- decompose(tsdata2)
+plot(ddata2)
+plot(ddata2$seasonal)
+plot(ddata2$trend)
+#actual plot 
+plot(msal$avg_wage_ft,type ="l",main = " Male Average salary",xlab= "Year",ylab="Average Salary")
+```
+#class
+```{r}
+class(tsdata2)
+```
+#arima model
+```{r}
+mymodel2 <- auto.arima(tsdata2)
+mymodel2
+```
+#fitting the best model
+```{r}
+auto.arima(tsdata2,ic="aic",trace=TRUE)
+```
+#Residuals
+```{r}
+library(tseries)
+adf.test(mymodel2$residuals)
+plot.ts(mymodel2$residuals)
+acf(ts(mymodel2$residuals),main = "ACF Residual")
+pacf(ts(mymodel2$residuals),main = "PACF Residual")
+```
+#forecasting male salary and mean
+```{r}
+myforecast2 <- forecast(mymodel2, level =c (95), h= 3*12)
+plot(myforecast2,main = " Male Salary forecasting for the next 3years",xlab = "Time", ylab ="Average salary")
+myforecast2[["mean"]]
+```
+#Female average salary 
+
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newsal <- drop_na(Sal)
+fsal <- subset(newsal, sex_name == "Female", select = c(avg_wage_ft, year,soc_name,sex_name))
+head(fsal)
+fsal$avg_wage_ft <- as.numeric(fsal$avg_wage_ft)
+fsal$Date <- paste (fsal$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata3 <- ts(fsal$avg_wage_ft,frequency = 12)
+tsdata3
+ddata3 <- decompose(tsdata3)
+plot(ddata3)
+plot(ddata3$seasonal)
+plot(ddata3$trend)
+plot(fsal$avg_wage_ft,type ="l",main = " Female Average salary",xlab= "Year",ylab="Average Salary")
+```
+#class
+
+```{r}
+class(tsdata3)
+```
+#arima model
+```{r}
+mymodel3 <- auto.arima(tsdata3)
+mymodel3
+```
+#fitting model
+```{r}
+auto.arima(tsdata3,ic="aic",trace=TRUE)
+```
+#Residuals
+```{r}
+library(tseries)
+adf.test(mymodel3$residuals)
+plot.ts(mymodel3$residuals)
+acf(ts(mymodel3$residuals),main = "ACF Residual")
+pacf(ts(mymodel3$residuals),main = "PACF Residual")
+```
+#forecasting female salary and mean
+```{r}
+myforecast3 <- forecast(mymodel3, level =c (95), h= 3*12)
+plot(myforecast3,main = " Female Salary forecasting for the next 3years",xlab = "Time", ylab ="Average salary")
+myforecast3[["mean"]]
+```
+# calculating average women salary
+
+```{r}
+avgsal<- 53392.66/43074.50
+avgsal
+cat("The average mens salary is ",avgsal,"times of womens salary")
+```
+#calculating how much women earns for every men who earns a dollar 
+```{r}
+cents <- 1/avgsal
+cents
+cat("The women earns",cents*100, "cents for every men who earns a dollar")
+```
+
+# forecasting for all races: dataset 2
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+allrace <- subset(newrace, select = c(avg_wage, year))
+head(allrace)
+allrace$avg_wage <- as.numeric(allrace$avg_wage)
+allrace$Date <- paste (allrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata4 <- ts(allrace$avg_wage,frequency = 12)
+tsdata4
+ddata4 <- decompose(tsdata4, "multiplicative")
+plot(ddata4)
+plot(ddata4$seasonal)
+plot(ddata4$trend)
+plot(allrace$avg_wage,type ="l",main = "Average salary for all races",xlab= "Year",ylab="Average Salary")
+```
+#class
+```{r}
+class(tsdata4)
+```
+```{r}
+mymodel4 <- auto.arima(tsdata4)
+mymodel4
+```
+```{r}
+auto.arima(tsdata4,ic="aic",trace=TRUE)
+```
+#residuals
+```{r}
+library(tseries)
+adf.test(mymodel4$residuals)
+plot.ts(mymodel4$residuals)
+acf(ts(mymodel4$residuals),main = "ACF Residual")
+pacf(ts(mymodel4$residuals),main = "PACF Residual")
+```
+#forecasting for all races and mean
+```{r}
+myforecast4 <- forecast(mymodel4, level =c (95), h= 3*12)
+plot(myforecast4,main = "Salary forecasting for all races in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast4[["mean"]]
+```
+
+
+# forecasting for race 1: White
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+wrace <- subset(newrace, race_name == "White",select = c(avg_wage, year,race_name))
+head(wrace)
+wrace$avg_wage <- as.numeric(wrace$avg_wage)
+wrace$Date <- paste (wrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata5 <- ts(wrace$avg_wage,frequency = 12)
+tsdata5
+ddata5 <- decompose(tsdata5, "multiplicative")
+plot(ddata5)
+plot(ddata5$seasonal)
+plot(ddata5$trend)
+plot(wrace$avg_wage,type ="l",main = "Average salary for all whites",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata5)
+```
+```{r}
+mymodel5 <- auto.arima(tsdata5)
+mymodel5
+```
+```{r}
+auto.arima(tsdata5,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel5$residuals)
+plot.ts(mymodel5$residuals)
+acf(ts(mymodel5$residuals),main = "ACF Residual")
+pacf(ts(mymodel5$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast5 <- forecast(mymodel5, level =c (95), h= 3*12)
+plot(myforecast5,main = "Salary forecasting for all whites in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast5[["mean"]]
+```
+
+
+# forecasting for race 2: Black or African American
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+brace <- subset(newrace, race_name == "Black or African American",select = c(avg_wage, year,race_name))
+head(brace)
+brace$avg_wage <- as.numeric(brace$avg_wage)
+brace$Date <- paste (brace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata6 <- ts(brace$avg_wage,frequency = 12)
+tsdata6
+ddata6 <- decompose(tsdata6, "multiplicative")
+plot(ddata6)
+plot(ddata6$seasonal)
+plot(ddata6$trend)
+plot(brace$avg_wage,type ="l",main = "Average salary for Blacks or African Americans",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata6)
+```
+```{r}
+mymodel6 <- auto.arima(tsdata6)
+mymodel6
+```
+```{r}
+auto.arima(tsdata6,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel6$residuals)
+plot.ts(mymodel6$residuals)
+acf(ts(mymodel6$residuals),main = "ACF Residual")
+pacf(ts(mymodel6$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast6 <- forecast(mymodel6, level =c (95), h= 3*12)
+plot(myforecast6,main = "Salary forecasting for all Blacks or African Americans in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast6[["mean"]]
+```
+
+# forecasting for race 3: American Indian
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+Airace <- subset(newrace, race_name == "American Indian",select = c(avg_wage, year,race_name))
+head(Airace)
+Airace$avg_wage <- as.numeric(Airace$avg_wage)
+Airace$Date <- paste (Airace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata7 <- ts(Airace$avg_wage,frequency = 12)
+tsdata7
+ddata7 <- decompose(tsdata7, "multiplicative")
+plot(ddata7)
+plot(ddata7$seasonal)
+plot(ddata7$trend)
+plot(Airace$avg_wage,type ="l",main = "Average salary for Americans Indian",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata7)
+```
+```{r}
+mymodel7 <- auto.arima(tsdata7)
+mymodel7
+```
+```{r}
+auto.arima(tsdata7,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel7$residuals)
+plot.ts(mymodel7$residuals)
+acf(ts(mymodel7$residuals),main = "ACF Residual")
+pacf(ts(mymodel7$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast7 <- forecast(mymodel7, level =c (95), h= 3*12)
+plot(myforecast7,main = "Salary forecasting for American Indian in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast7[["mean"]]
+```
+
+# forecasting for race 4: Alaska Native
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+Anrace <- subset(newrace, race_name == "Alaska Native",select = c(avg_wage, year,race_name))
+head(Anrace)
+Anrace$avg_wage <- as.numeric(Anrace$avg_wage)
+Anrace$Date <- paste (Anrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata8 <- ts(Anrace$avg_wage,frequency = 12)
+tsdata8
+ddata8 <- decompose(tsdata8, "multiplicative")
+plot(ddata8)
+plot(ddata8$seasonal)
+plot(ddata8$trend)
+plot(Anrace$avg_wage,type ="l",main = "Average salary for Alaska Native",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata8)
+```
+```{r}
+mymodel8 <- auto.arima(tsdata8)
+mymodel8
+```
+```{r}
+auto.arima(tsdata8,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel8$residuals)
+plot.ts(mymodel8$residuals)
+acf(ts(mymodel8$residuals),main = "ACF Residual")
+pacf(ts(mymodel8$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast8 <- forecast(mymodel8, level =c (95), h= 3*12)
+plot(myforecast8,main = "Salary forecasting for Alaska Native in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast8[["mean"]]
+```
+
+
+# forecasting for race 5: Other Native American
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+onrace <- subset(newrace, race_name == "Other Native American",select = c(avg_wage, year,race_name))
+head(onrace)
+onrace$avg_wage <- as.numeric(onrace$avg_wage)
+onrace$Date <- paste (onrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata9 <- ts(onrace$avg_wage,frequency = 12)
+tsdata9
+ddata9 <- decompose(tsdata9, "multiplicative")
+plot(ddata9)
+plot(ddata9$seasonal)
+plot(ddata9$trend)
+plot(onrace$avg_wage,type ="l",main = "Average salary for Other Native American",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata9)
+```
+```{r}
+mymodel9 <- auto.arima(tsdata9)
+mymodel9
+```
+```{r}
+auto.arima(tsdata9,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel9$residuals)
+plot.ts(mymodel9$residuals)
+acf(ts(mymodel9$residuals),main = "ACF Residual")
+pacf(ts(mymodel9$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast9 <- forecast(mymodel9, level =c (95), h= 3*12)
+plot(myforecast9,main = "Salary forecasting for Other Native American in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast9[["mean"]]
+```
+
+
+# forecasting for race 6: Asian
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+asrace <- subset(newrace, race_name == "Asian",select = c(avg_wage, year,race_name))
+head(asrace)
+asrace$avg_wage <- as.numeric(asrace$avg_wage)
+asrace$Date <- paste (asrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata10 <- ts(asrace$avg_wage,frequency = 12)
+tsdata10
+ddata10 <- decompose(tsdata10, "multiplicative")
+plot(ddata10)
+plot(ddata10$seasonal)
+plot(ddata10$trend)
+plot(asrace$avg_wage,type ="l",main = "Average salary for Asian",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata10)
+```
+```{r}
+mymodel10 <- auto.arima(tsdata10)
+mymodel10
+```
+```{r}
+auto.arima(tsdata10,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel10$residuals)
+plot.ts(mymodel10$residuals)
+acf(ts(mymodel10$residuals),main = "ACF Residual")
+pacf(ts(mymodel10$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast10 <- forecast(mymodel10, level =c (95), h= 3*12)
+plot(myforecast10,main = "Salary forecasting for Asian in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast10[["mean"]]
+```
+
+
+
+
+
+# forecasting for race 7: Native Hawaiian or Other Pacific Islander
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+nhrace <- subset(newrace, race_name == "Native Hawaiian or Other Pacific Islander",select = c(avg_wage, year,race_name))
+head(nhrace)
+nhrace$avg_wage <- as.numeric(nhrace$avg_wage)
+nhrace$Date <- paste (nhrace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata11 <- ts(nhrace$avg_wage,frequency = 12)
+tsdata11
+ddata11 <- decompose(tsdata11, "multiplicative")
+plot(ddata11)
+plot(ddata11$seasonal)
+plot(ddata11$trend)
+plot(nhrace$avg_wage,type ="l",main = "Average salary for Native Hawaiian or Other Pacific Islander",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata11)
+```
+```{r}
+mymodel11 <- auto.arima(tsdata11)
+mymodel11
+```
+```{r}
+auto.arima(tsdata11,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel11$residuals)
+plot.ts(mymodel11$residuals)
+acf(ts(mymodel11$residuals),main = "ACF Residual")
+pacf(ts(mymodel11$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast11 <- forecast(mymodel11, level =c (95), h= 3*12)
+plot(myforecast11,main = "Salary forecasting for Native Hawaiian or Other Pacific Islander in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast11[["mean"]]
+```
+
+
+
+# forecasting for race 8: Two or more races
+```{r}
+library(forecast)
+library(readr)
+library(zoo)
+newrace <- drop_na(race)
+trace <- subset(newrace, race_name == "Two or more races",select = c(avg_wage, year,race_name))
+head(trace)
+trace$avg_wage <- as.numeric(trace$avg_wage)
+trace$Date <- paste (trace$year,"/01/01",sep ="")
+#xts(tsal$Date, as.Date(tsal$Date, format='%y%m%d'))
+tsdata12 <- ts(trace$avg_wage,frequency = 12)
+tsdata12
+ddata12 <- decompose(tsdata12, "multiplicative")
+plot(ddata12)
+plot(ddata12$seasonal)
+plot(ddata12$trend)
+plot(trace$avg_wage,type ="l",main = "Average salary for Two or more races",xlab= "Year",ylab="Average Salary")
+```
+
+```{r}
+class(tsdata12)
+```
+```{r}
+mymodel12 <- auto.arima(tsdata12)
+mymodel12
+```
+```{r}
+auto.arima(tsdata12,ic="aic",trace=TRUE)
+```
+
+```{r}
+library(tseries)
+adf.test(mymodel12$residuals)
+plot.ts(mymodel12$residuals)
+acf(ts(mymodel12$residuals),main = "ACF Residual")
+pacf(ts(mymodel12$residuals),main = "PACF Residual")
+```
+
+```{r}
+myforecast12 <- forecast(mymodel12, level =c (95), h= 3*12)
+plot(myforecast12,main = "Salary forecasting for Two or more races in next 3years",xlab = "Time", ylab ="Average salary")
+myforecast12[["mean"]]
+```
+
+#  Bias Within Job Classes: Computer programmers
+
+```{r}
+newsal <- drop_na(Sal)
+bsal <- subset(newsal, soc_name == "Computer programmers",select = c(avg_wage_ft,year,sex_name,num_ppl,soc_name))
+head(bsal)
+ggplot(data= bsal, mapping= aes(x= factor(year), y= avg_wage_ft,fill= sex_name))+geom_bar(stat = "identity",position = "dodge2")+labs(x= "year",y= "Average salary",title = "Year vs Average Salaryfor Computer Programmers")
+ggplot(data= bsal, mapping= aes(x= factor(year),y= num_ppl,fill= sex_name))+geom_bar(stat= "identity",position = "dodge2")+labs(x= "year",y= "No. of Employees",title = "Year vs No.of Employees for Computer Programmers")
+```
+
+#Bias Within Job Classes: Mechanical engineers
+```{r}
+newsal <- drop_na(Sal)
+mesal <- subset(newsal, soc_name == "Mechanical engineers",select = c(avg_wage_ft,year,sex_name,num_ppl,soc_name))
+head(mesal)
+ggplot(data= mesal, mapping= aes(x= factor(year), y= avg_wage_ft,fill= sex_name))+geom_bar(stat = "identity",position = "dodge2")+labs(x= "year",y= "Average salary",title = "Year vs Average Salary for Mechanical engineers")
+ggplot(data= mesal, mapping= aes(x= factor(year),y= num_ppl,fill= sex_name))+geom_bar(stat= "identity",position = "dodge2")+labs(x= "year",y= "No. of Employees",title = "Year vs No.of Employees for Mechanical engineers")
+```
+#Bias Within Job Classes: Electrical & electronics engineers
+```{r}
+newsal <- drop_na(Sal)
+eesal <- subset(newsal, soc_name == "Electrical & electronics engineers",select =
+          c(avg_wage_ft,year,sex_name,num_ppl,soc_name))
+head(eesal)
+ggplot(data= eesal, mapping= aes(x= factor(year), y= avg_wage_ft,fill= sex_name))+geom_bar(stat = "identity",position = "dodge2")+labs(x= "year",y= "Average salary",title = "Year vs Average Salary for Electrical & electronics engineers")
+ggplot(data= eesal, mapping= aes(x= factor(year),y= num_ppl,fill= sex_name))+geom_bar(stat= "identity",position = "dodge2")+labs(x= "year",y= "No. of Employees",title = "Year vs No.of Employees for Electrical & electronics engineers")
+```
+#Bias Within Job Classes: Civil engineers
+```{r}
+newsal <- drop_na(Sal)
+csal <- subset(newsal, soc_name == "Civil engineers",select =
+          c(avg_wage_ft,year,sex_name,num_ppl,soc_name))
+head(csal)
+ggplot(data= csal, mapping= aes(x= factor(year), y= avg_wage_ft,fill= sex_name))+geom_bar(stat = "identity",position = "dodge2")+labs(x= "year",y= "Average salary",title = "Year vs Average Salary for Civil engineers")
+ggplot(data= csal, mapping= aes(x= factor(year),y= num_ppl,fill= sex_name))+geom_bar(stat= "identity",position = "dodge2")+labs(x= "year",y= "No. of Employees",title = "Year vs No.of Employees for Civil engineers")
+```
+
+#Bias Within Job Classes:  Aerospace engineers
+```{r}
+newsal <- drop_na(Sal)
+asal <- subset(newsal, soc_name == "Aerospace engineers",select =
+          c(avg_wage_ft,year,sex_name,num_ppl,soc_name))
+head(asal)
+ggplot(data= asal, mapping= aes(x= factor(year), y= avg_wage_ft,fill= sex_name))+geom_bar(stat = "identity",position = "dodge2")+labs(x= "year",y= "Average salary",title = "Year vs Average Salary for Aerospace engineers")
+ggplot(data= asal, mapping= aes(x= factor(year),y= num_ppl,fill= sex_name))+geom_bar(stat= "identity",position = "dodge2")+labs(x= "year",y= "No. of Employees",title = "Year vs No.of Employees for Aerospace engineers")
+```
+#predicted monthly salary by races
+```{r}
+ggplot(data= predictedrace,aes(x= factor(Year),y=mean))+geom_bar(stat="identity",position = "dodge",aes(fill=Race))+labs(title = "Predicted mean by racial group",x="year",y="Average salary")
+```
+##predicted monthly salary by races
+```{r}
+library(plotly)
+library(gganimate)
+predg <- subset(predictedrace,sex== "male" | sex=="female",select=c(year1,gender_mean,sex))
+p<- ggplot(data= predg,aes(x= year1,y=gender_mean))+geom_bar(stat="identity",position = "dodge",aes(fill=sex))+labs(title = "Predicted mean by gender",x="year",y="Average salary")+transition_states(sex,transition_length=2,state_length=1)+enter_fade()+exit_shrink()+ease_aes("sine-in-out")
+p
+```
+```{r}
+
+unem <- subset(predictedrace,select=c(year2,Unemploy))
+unem<- drop_na(unem)
+p<- ggplot(data= unem,aes(x= year2,y=Unemploy))+geom_bar(stat="identity", fill="Navy blue")+labs(title = "Predicted Unemployment rate",x="year",y="Unemployment rate")
+p
+```
+
+
